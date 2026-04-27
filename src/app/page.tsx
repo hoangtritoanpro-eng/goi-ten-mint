@@ -1,22 +1,28 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
-// === COMPONENT PHÁO HOA ĂN MỪNG ===
+// === COMPONENT PHÁO HOA ĂN MỪNG (ĐÃ FIX LỖI HYDRATION) ===
 const Confetti = ({ onComplete }: { onComplete: () => void }) => {
+  const [pieces, setPieces] = useState<any[]>([]);
+
   useEffect(() => {
+    // Chỉ tạo pháo hoa sau khi web đã tải xong để tránh lỗi Hydration của Vercel
+    const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-amber-400', 'bg-rose-500', 'bg-purple-500'];
+    const newPieces = Array.from({ length: 70 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      animationDuration: `${Math.random() * 3 + 2}s`,
+      animationDelay: `${Math.random() * 2}s`,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: Math.random() > 0.5 ? 'rounded-full' : 'rounded-sm'
+    }));
+    setPieces(newPieces);
+
     const timer = setTimeout(onComplete, 3000);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
-  const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-amber-400', 'bg-rose-500', 'bg-purple-500'];
-  const pieces = Array.from({ length: 70 }).map((_, i) => ({
-    id: i,
-    left: `${Math.random() * 100}%`,
-    animationDuration: `${Math.random() * 3 + 2}s`,
-    animationDelay: `${Math.random() * 2}s`,
-    color: colors[Math.floor(Math.random() * colors.length)],
-    shape: Math.random() > 0.5 ? 'rounded-full' : 'rounded-sm'
-  }));
+  if (pieces.length === 0) return null;
 
   return (
     <div className="fixed inset-0 pointer-events-none z-[60] overflow-hidden">
@@ -32,6 +38,10 @@ const Confetti = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 export default function RandomCaller() {
+  // === KHIÊN CHỐNG LỖI HYDRATION VÀ GOOGLE DỊCH ===
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   // === STATES DỮ LIỆU ===
   const [rawText, setRawText] = useState("Lưu Đức Bảo An\nĐào Nhật Anh\nNguyễn Văn Tuấn Anh\nTrần Hải Bình\nNguyễn Thành Công\nVũ Mạnh Cường\nTạ Quang Hiếu\nHà Trọng Dũng");
   const [students, setStudents] = useState<string[]>(["Lưu Đức Bảo An", "Đào Nhật Anh", "Nguyễn Văn Tuấn Anh", "Trần Hải Bình", "Nguyễn Thành Công", "Vũ Mạnh Cường", "Tạ Quang Hiếu", "Hà Trọng Dũng"]);
@@ -64,14 +74,15 @@ export default function RandomCaller() {
   const [musicOn, setMusicOn] = useState(false);
   const [sfxOn, setSfxOn] = useState(true);
 
-  const aMusic = useRef<HTMLAudioElement>(null);
-  const aSpin = useRef<HTMLAudioElement>(null);
-  const aDice = useRef<HTMLAudioElement>(null);
-  const aSlot = useRef<HTMLAudioElement>(null);
-  const aBomb = useRef<HTMLAudioElement>(null);
-  const aDuck = useRef<HTMLAudioElement>(null);
-  const aWin = useRef<HTMLAudioElement>(null);
-  const aClap = useRef<HTMLAudioElement>(null);
+  // === ĐÃ SỬA LỖI TYPESCRIPT (THÊM | null) ===
+  const aMusic = useRef<HTMLAudioElement | null>(null);
+  const aSpin = useRef<HTMLAudioElement | null>(null);
+  const aDice = useRef<HTMLAudioElement | null>(null);
+  const aSlot = useRef<HTMLAudioElement | null>(null);
+  const aBomb = useRef<HTMLAudioElement | null>(null);
+  const aDuck = useRef<HTMLAudioElement | null>(null);
+  const aWin = useRef<HTMLAudioElement | null>(null);
+  const aClap = useRef<HTMLAudioElement | null>(null);
 
   // === HÀM MỞ KHÓA ÂM THANH ===
   const unlockAudio = () => {
@@ -82,8 +93,10 @@ export default function RandomCaller() {
         const playPromise = ref.current.play();
         if (playPromise !== undefined) {
           playPromise.then(() => {
-            ref.current!.pause();
-            ref.current!.currentTime = 0;
+            if (ref.current) {
+              ref.current.pause();
+              ref.current.currentTime = 0;
+            }
           }).catch(error => console.log("Lỗi load âm thanh: ", error));
         }
       }
@@ -102,31 +115,32 @@ export default function RandomCaller() {
   // === XỬ LÝ GIAO DIỆN ===
   const getThemeStyles = () => {
     if (theme === "emerald") return {
-      bg: "bg-[#F8FAFC]", card: "bg-white", border: "border-slate-200", 
+      bg: "bg-[#F8FAFC]", card: "bg-white", border: "border-slate-200", line: "bg-slate-200",
       text: "text-slate-900", mut: "text-slate-700", acc: "text-emerald-700", accBg: "bg-emerald-50", accBorder: "border-emerald-300",
       modalBg: "bg-[#F8FAFC]/95", btnTxt: "text-white" 
     };
     if (theme === "light") return {
-      bg: "bg-[#F4F7F9]", card: "bg-white", border: "border-slate-200", 
+      bg: "bg-[#F4F7F9]", card: "bg-white", border: "border-slate-200", line: "bg-slate-200",
       text: "text-slate-900", mut: "text-slate-700", acc: "text-blue-700", accBg: "bg-blue-50", accBorder: "border-blue-300",
       modalBg: "bg-white/95", btnTxt: "text-slate-900" 
     };
     return {
-      bg: "bg-[#090E17]", card: "bg-[#121A2F]", border: "border-[#1E293B]", 
+      bg: "bg-[#090E17]", card: "bg-[#121A2F]", border: "border-[#1E293B]", line: "bg-slate-700",
       text: "text-white", mut: "text-slate-400", acc: "text-[#00E5FF]", accBg: "bg-[#00E5FF]/10", accBorder: "border-[#00E5FF]/30",
       modalBg: "bg-[#090E17]/95", btnTxt: "text-slate-900" 
     };
   };
   const t = getThemeStyles();
 
-  // === AUDIO CONTROLLERS CHUẨN XÁC ===
+  // === AUDIO CONTROLLERS ĐÃ CHUẨN XÁC VỚI TYPESCRIPT ===
   const stopAllSfx = () => {
     [aSpin, aDice, aSlot, aBomb, aDuck, aWin, aClap].forEach(r => {
       if (r.current) { r.current.pause(); r.current.currentTime = 0; }
     });
   };
 
-  const playSfx = (ref: React.RefObject<HTMLAudioElement>) => {
+  // Khai báo | null ở tham số để Vercel không báo lỗi nữa
+  const playSfx = (ref: React.RefObject<HTMLAudioElement | null>) => {
     if (sfxOn && ref.current) {
       stopAllSfx();
       ref.current.play().catch(e => console.warn("Lỗi phát âm thanh: ", e));
@@ -260,7 +274,7 @@ export default function RandomCaller() {
     
     const totalSteps = 6;
     let currentLeft = 50;
-    let path = [];
+    let path: any[] = [];
     
     for (let i = 1; i <= totalSteps; i++) {
        const remaining = totalSteps - i + 1;
@@ -366,6 +380,9 @@ export default function RandomCaller() {
     { id: "CLAW", name: "MÁY GẮP THÚ", icon: "🪝" }, { id: "LETTER", name: "THƯ BÍ ẨN", icon: "💌" }
   ];
 
+  // Nếu trình duyệt chưa tải xong thì không hiện gì cả để chống rác lỗi Vercel
+  if (!isMounted) return null;
+
   return (
     <div className={`min-h-screen overflow-y-auto ${t.bg} font-sans p-6 flex flex-col transition-colors duration-500 custom-scrollbar`}>
       
@@ -398,7 +415,7 @@ export default function RandomCaller() {
         <div className={`fixed inset-0 ${t.modalBg} backdrop-blur-md z-50 flex flex-col p-6 animate-in fade-in duration-200`}>
           <div className={`flex justify-between items-center mb-8 border-b ${t.border} pb-4`}>
             <div className="flex items-center gap-4">
-              <span className={`text-4xl ${t.cardBg} p-3 rounded-2xl border ${t.border} shadow-sm`}>{game.icon}</span>
+              <span className={`text-4xl ${t.card} p-3 rounded-2xl border ${t.border} shadow-sm`}>{game.icon}</span>
               <h2 className={`text-slate-900 font-black tracking-widest text-2xl drop-shadow-[0_0_5px_rgba(255,255,255,0.8)] uppercase`}>{game.name}</h2>
             </div>
             <div className="flex items-center gap-6">
@@ -612,7 +629,7 @@ export default function RandomCaller() {
       )}
 
       {/* === HEADER === */}
-      <header className={`flex justify-between items-center mb-6 ${t.cardBg} p-4 rounded-2xl border ${t.border} shadow-sm shrink-0`}>
+      <header className={`flex justify-between items-center mb-6 ${t.card} p-4 rounded-2xl border ${t.border} shadow-sm shrink-0`}>
         <div className="flex items-start gap-3">
           <div className={`w-3 h-3 ${theme === 'emerald' ? 'bg-emerald-500' : 'bg-rose-500'} rounded-full mt-1.5 shadow-sm`}></div>
           <div><h1 className={`text-sm font-bold ${t.mut} uppercase`}>Hệ Thống Gọi Tên</h1><h2 className={`text-[15px] font-black ${t.text} tracking-widest uppercase mt-1`}>🎯 12 CHẾ ĐỘ NGẪU NHIÊN</h2></div>
@@ -683,7 +700,7 @@ export default function RandomCaller() {
           </div>
         </div>
 
-        {/* === MÔ TẢ & BẢN QUYỀN (FOOTER THEO GIAO DIỆN) === */}
+        {/* === MÔ TẢ & BẢN QUYỀN === */}
         <div className="mt-8 bg-[#0F172A] rounded-[2rem] p-8 flex flex-col items-center justify-center border-4 border-slate-800/50 shadow-2xl relative overflow-hidden shrink-0">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-900/10"></div>
             
