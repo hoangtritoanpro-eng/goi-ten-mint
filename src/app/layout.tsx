@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "App Tạo Đề ToánHệ Thống Gọi Tên - Thầy Toàn AI",
+  title: "Hệ Thống Gọi Tên - Thầy Toàn AI",
   description: "Ứng dụng gọi tên ngẫu nhiên với 12 chế độ dành cho học sinh",
 };
 
